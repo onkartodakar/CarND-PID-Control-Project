@@ -1,6 +1,19 @@
 # CarND-Controls-PID
 Self-Driving Car Engineer Nanodegree Program
 
+## PID basics
+A PID controller is a closed feedback loop control system that continuously monitors the process error i.e. the  difference between the process control variable. The PID controller minimizes process error by applying correction in proportional, integral and derivative terms of this error. For the SDC, the process control variable is the Cross-track error(CTE) which is the delta between the current position of the car and the center of the lane. The goal of a PID controller is to apply steering control inputs such that the car drives close to the center of the lane minimzing the CTE.
+
+The P term in the PID controller applies control input proportional to the CTE. This enables the car to react to large changes in the CTE due to sharp turns etc. Relying on the P term alone causes the car to overshoot the target trajectory and introduces a oscillating behavior.
+
+The D term in the PID controller applies control input proportional to the difference/rate of change of the CTE. If the rate of change of CTE is large, the D term applies proportional steering input to rapidly minimize this CTE. Adding this term also dampens the oscillating behavior introduced by the P term.
+
+The I term in the PID controller is proportional to the integral of CTE. This term is useful if there is constant error in the system due to factors such as bias in steering mechanisms etc. This bias may cause a constant lateral shift from the expected trajectory. The integral term keeps track of this constant CTE and minimizes this term.
+
+### Parameter tuning:
+
+A manual turning approach is used to determine the values of the parameters Kp, Kd and Ki. Initially the Kd and Ki parameters were set to 0. Setting the value of Kp to 0.5 helped the car follow the track pretty well. This also introduced a lot of oscillations which drove the car off the track most of the times. The differential term Kd was then tuned to dampen these oscillations. Setting the value of Kd to 55.0 made the car complete the lap. A small integral factor Ki of 0.0004 was added to counter any biases in the system. Alternative tuning approaches like Stochastic Gradient Descent, Twiddle etc. can be used to automatically tune the PID parameters. This will be incorporated in this project in the future.
+
 ---
 
 ## Dependencies
@@ -19,7 +32,7 @@ Self-Driving Car Engineer Nanodegree Program
   * Run either `./install-mac.sh` or `./install-ubuntu.sh`.
   * If you install from source, checkout to commit `e94b6e1`, i.e.
     ```
-    git clone https://github.com/uWebSockets/uWebSockets 
+    git clone https://github.com/uWebSockets/uWebSockets
     cd uWebSockets
     git checkout e94b6e1
     ```
@@ -33,7 +46,7 @@ There's an experimental patch for windows in this [PR](https://github.com/udacit
 1. Clone this repo.
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
-4. Run it: `./pid`. 
+4. Run it: `./pid`.
 
 ## Editor Settings
 

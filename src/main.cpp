@@ -33,9 +33,17 @@ int main()
   uWS::Hub h;
 
   PID pid;
+  PID pid_speed;
   // TODO: Initialize the pid variable.
+  // Crazy oscillations! pid.Init(0.5, 0, 0);
+  pid.Init(0.5,0.0004, 55.0);
+  //Additional PID control for Speed. 
+  pid_speed.Init(0.35, 0, 0);
 
-  h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  double set_speed;
+  set_speed = 50;
+
+  h.onMessage([&pid, &pid_speed, &set_speed](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -51,30 +59,51 @@ int main()
           double speed = std::stod(j[1]["speed"].get<std::string>());
           double angle = std::stod(j[1]["steering_angle"].get<std::string>());
           double steer_value;
+          double throttle;
           /*
           * TODO: Calcuate steering value here, remember the steering value is
           * [-1, 1].
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
-          
-          // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+          pid.UpdateError(cte);
 
-          json msgJson;
-          msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
-          auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
-          ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+          steer_value = pid.TotalError();
+
+          if (fabs(steer_value)>1.0){
+           if (steer_value> 0){
+            steer_value = 1.0;
+          } else {
+            steer_value = -1.0;
+          }
         }
-      } else {
-        // Manual driving
-        std::string msg = "42[\"manual\",{}]";
+
+          // DEBUG
+        double speed_error = set_speed - speed;
+
+        pid_speed.UpdateError(speed_error);
+
+         //Throttle PID to control speed. 
+        throttle  = -(pid_speed.TotalError());
+
+
+        std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+
+        json msgJson;
+        msgJson["steering_angle"] = steer_value;
+          // Not using the throttle PID
+        msgJson["throttle"] = 0.5;
+        auto msg = "42[\"steer\"," + msgJson.dump() + "]";
+        std::cout << msg << std::endl;
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
       }
+    } else {
+        // Manual driving
+      std::string msg = "42[\"manual\",{}]";
+      ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
     }
-  });
+  }
+});
 
   // We don't need this since we're not using HTTP but if it's removed the program
   // doesn't compile :-(
